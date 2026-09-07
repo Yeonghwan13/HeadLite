@@ -18,7 +18,12 @@ Python 3.10 or newer. Install a PyTorch build suitable for your platform, then r
 python -m pip install -e .
 ```
 
-The library is packaged; the examples are run from the checkout. Local checks used Python 3.13.5 and PyTorch 2.10.0+cpu. The GitHub Actions matrix must be run on the final repository commit; dependency bounds are not a claim that every combination was tested.
+Installing the package provides the `headlite` library. `examples/` and `tests/` are not part of
+the installed package, so those commands are run from a checkout.
+
+Verified on CPU with Python 3.11 and PyTorch 2.9.1, and in continuous integration on Python 3.10
+and 3.11. The `>=` bounds in `pyproject.toml` are the supported range, not a claim that every
+combination inside it was tested. No GPU path and no trained weights were exercised.
 
 ## Quick start
 
