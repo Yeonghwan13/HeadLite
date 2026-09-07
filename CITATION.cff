@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: Please cite the accompanying article.
+title: HeadLite model implementation
+type: software
+authors:
+- given-names: Yeonghwan
+  family-names: Kim
+- given-names: ChangHwan
+  family-names: Choi
+- given-names: Kyunghwan
+  family-names: Yoo
+- given-names: Sunoh
+  family-names: Kim
+- given-names: Sang-Il
+  family-names: Choi
+preferred-citation:
+  type: article
+  title: 'HeadLite: Compact Multi-Modal Sensor Fusion for Stride Length Estimation
+    from Smart Insoles'
+  authors:
+  - given-names: Yeonghwan
+    family-names: Kim
+  - given-names: ChangHwan
+    family-names: Choi
+  - given-names: Kyunghwan
+    family-names: Yoo
+  - given-names: Sunoh
+    family-names: Kim
+  - given-names: Sang-Il
+    family-names: Choi
+  journal: IEEE Sensors Journal
+  year: 2026
+  doi: 10.1109/JSEN.2026.3724195
