@@ -60,8 +60,9 @@ Without Git, download the source archive, unpack it, and start from the top-leve
 
 ### Install: Linux or Windows, CPU
 
-The PyTorch command below is the CPU one from the official installation instructions for 2.9.1.
-It was run on Linux for this release; the Windows form of the same command was not run here.
+The PyTorch command below follows the official CPU installation form, with the version this
+release was tested with. It was run on Linux for this release; the Windows form of the same
+command was not run here.
 
 ```bash
 python -m pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
@@ -197,13 +198,30 @@ The exact head layout is documented in [Implementation notes](docs/IMPLEMENTATIO
 
 ## Tests
 
+In an environment that already has a supported PyTorch:
+
 ```bash
-python -m pip install -c constraints-tested-cpu.txt -r requirements-dev.txt
-python -m pytest -q
+python -m pip install -r requirements-dev.txt
+python -m pip install -e .
+python -m pip check
+python -m pytest
 ```
 
 `requirements-dev.txt` includes `requirements.txt`, so this adds `pytest` to an environment that
-already has the runtime dependency. Running the tests creates pytest's own temporary files.
+already has the runtime dependency. It deliberately does not apply `constraints-tested-cpu.txt`:
+that file pins the exact version this release was tested with, and applying it here would
+downgrade a newer supported PyTorch you had installed on purpose.
+
+To reproduce the exact tested environment instead, use a fresh virtual environment and opt into
+the pin:
+
+```bash
+python -m pip install -c constraints-tested-cpu.txt -r requirements-dev.txt
+python -m pip install -c constraints-tested-cpu.txt -e .
+python -m pytest
+```
+
+Running the tests creates pytest's own temporary files.
 
 ## Citation
 
