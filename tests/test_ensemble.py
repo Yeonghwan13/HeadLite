@@ -32,7 +32,7 @@ class Wrong(torch.nn.Module):
         elif self.mode == "integer":
             return torch.zeros(b, 1, dtype=torch.long), torch.ones(b, 1)
         elif self.mode == "bare":
-            return self.value.expand(b, 1)     # not a (mean, variance) pair
+            return self.value.expand(b, 1)     # a bare tensor, not a tuple or list
         elif self.mode == "dict":
             return {"mean": self.value.expand(b, 1)}
         else:
@@ -152,7 +152,8 @@ class Shaped(torch.nn.Module):
     lambda m: (m,),                                   # one-element tuple
     lambda m: [m],                                    # one-element list
     lambda m: (m, torch.ones_like(m), "not read"),    # extra elements, one not even a tensor
-], ids=["one_element_tuple", "one_element_list", "extra_elements"])
+    lambda m: (m, "not a tensor either"),             # the second element is never validated
+], ids=["one_element_tuple", "one_element_list", "extra_elements", "unvalidated_second"])
 def test_only_the_first_element_of_the_return_value_is_read(wrap):
     """The documented contract: a non-empty tuple or list, whose first element is the mean.
 
@@ -183,5 +184,12 @@ def test_a_one_element_tuple_is_still_checked_against_the_batch():
 def test_empty_return_value_is_refused(empty):
     """There is no first element to read, so this cannot be treated as a mean."""
     e = HeadLiteEnsemble([Shaped(i, lambda m, e=empty: e()) for i in range(1, 6)]).eval()
-    with pytest.raises(TypeError, match="empty"):
+    with pytest.raises(TypeError, match="returned an empty"):
+        e(*inputs(3))
+
+
+def test_first_element_must_itself_be_a_tensor():
+    """The first element is read as the mean, so it has to be one."""
+    e = HeadLiteEnsemble([Shaped(i, lambda m: ("not a tensor", m)) for i in range(1, 6)]).eval()
+    with pytest.raises(TypeError, match="as its mean"):
         e(*inputs(3))

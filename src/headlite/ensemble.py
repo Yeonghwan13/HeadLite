@@ -11,11 +11,12 @@ def _extract_mean(output, index):
     they return. The contract is deliberately narrow: a member must return a non-empty ``tuple``
     or ``list``, and its **first element** is read as the mean. Anything after the first element
     is neither read nor checked, so a member that returns ``(mean,)`` is as acceptable here as one
-    that returns ``(mean, variance)``. A ``HeadLite`` network returns ``(mean, variance)``, and
-    only its mean is used; the wrapper produces no aggregate uncertainty.
+    that returns ``(mean, variance)``. For the call this wrapper makes, a ``HeadLite`` network
+    returns ``(mean, variance)`` and only its mean is used; the wrapper produces no aggregate
+    uncertainty.
 
-    A bare tensor, a dictionary, or an empty sequence is refused by name rather than failing later
-    inside ``torch.stack``.
+    The first element must itself be a tensor. A bare tensor, a dictionary, or an empty sequence
+    is refused with a message naming the member, rather than failing later inside ``torch.stack``.
     """
     if isinstance(output, torch.Tensor):
         raise TypeError(
