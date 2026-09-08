@@ -26,7 +26,7 @@ jobs:
       - run: python -m pip check
       - name: The documented PyTorch build must survive the later installs
         run: python -c "import torch; assert torch.__version__.split('+')[0] == '2.9.1', torch.__version__"
-      - run: python -m pytest -q -rs
+      - run: python -m pytest -o addopts="-p no:cacheprovider" -rs
       - run: python examples/forward.py
       - run: python examples/forward.py --ensemble
 
@@ -75,7 +75,7 @@ jobs:
           # The sdist ships the tests, so unpacking it must give a source tree they can run in.
           mkdir -p /tmp/sdist-src && tar -xzf dist/*.tar.gz -C /tmp/sdist-src
           /tmp/sdist-env/bin/python -m pip install -c constraints-tested-cpu.txt pytest
-          (cd /tmp/sdist-src/headlite-* && /tmp/sdist-env/bin/python -m pytest -q -rs)
+          (cd /tmp/sdist-src/headlite-* && /tmp/sdist-env/bin/python -m pytest -o addopts="-p no:cacheprovider" -rs)
       - name: The distribution metadata must match the declared dependencies
         run: |
           python -m pip install packaging
