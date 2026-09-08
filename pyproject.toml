@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "HeadLite model architecture and five-network mean prediction"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["torch>=2.9"]
+dependencies = ["torch>=2.13.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]

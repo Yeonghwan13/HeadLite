@@ -1,3 +1,10 @@
 # Direct runtime dependency. Keep in sync with pyproject.toml.
+#
+# The lower bound is set by PyTorch security advisories, not by any HeadLite API need:
+#   GHSA-63cw-57p8-fm3p (CVE-2026-24747)  affects < 2.10.0
+#   GHSA-qfhq-4f3w-5fph (CVE-2025-3001)   affects < 2.10.0
+#   GHSA-rrmf-rvhw-rf47 (CVE-2025-3000)   affects <= 2.12.1
+# 2.13.0 is the first release outside all three ranges.
+#
 # Install a platform-appropriate PyTorch build first when necessary.
-torch>=2.9
+torch>=2.13.0

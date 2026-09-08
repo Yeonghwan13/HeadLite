@@ -1,3 +1,4 @@
 # Reference PyTorch version for the documented CPU test path.
-# This is not a complete environment lock or a GPU/platform compatibility claim.
-torch==2.9.1
+# This is not a complete environment lock or a GPU/platform compatibility claim,
+# and it is not a wheel selector: the build still comes from the index you install from.
+torch==2.14.0
