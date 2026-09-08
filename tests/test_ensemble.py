@@ -88,7 +88,7 @@ def test_members_that_ignore_the_batch_are_refused():
     ("inf", ValueError, "non-finite"),
     ("integer", TypeError, "floating"),
     ("bare", TypeError, "bare tensor"),
-    ("dict", TypeError, "mean, variance"),
+    ("dict", TypeError, "first element is the mean"),
 ])
 def test_malformed_member_output_is_refused(mode, exc, match):
     e = HeadLiteEnsemble([Wrong(i, mode) for i in range(1, 6)]).eval()
@@ -136,3 +136,52 @@ def test_float64_members_are_accepted():
     out = e(*inputs(3))
     assert out.dtype == torch.float64
     assert torch.equal(out, torch.full((3, 1), 3.0, dtype=torch.float64))
+
+
+class Shaped(torch.nn.Module):
+    """A member that returns a well-formed mean wrapped however the caller asks."""
+    def __init__(self, value, wrap):
+        super().__init__()
+        self.register_buffer("value", torch.tensor(float(value)))
+        self.wrap = wrap
+    def forward(self, acc, gyr, prs, meta):
+        return self.wrap(self.value.expand(acc.shape[0], 1))
+
+
+@pytest.mark.parametrize("wrap", [
+    lambda m: (m,),                                   # one-element tuple
+    lambda m: [m],                                    # one-element list
+    lambda m: (m, torch.ones_like(m), "not read"),    # extra elements, one not even a tensor
+], ids=["one_element_tuple", "one_element_list", "extra_elements"])
+def test_only_the_first_element_of_the_return_value_is_read(wrap):
+    """The documented contract: a non-empty tuple or list, whose first element is the mean.
+
+    Later elements are neither read nor validated, so a member is free to return just the mean.
+    """
+    e = HeadLiteEnsemble([Shaped(i, wrap) for i in range(1, 6)]).eval()
+    out = e(*inputs(3))
+    assert out.shape == (3, 1)
+    assert torch.equal(out, torch.full((3, 1), 3.0))
+
+
+def test_one_element_tuple_gives_the_same_result_as_a_mean_variance_pair():
+    """Dropping the variance changes nothing about the prediction, because it is never read."""
+    pairs = HeadLiteEnsemble([Constant(i) for i in range(1, 6)]).eval()
+    singles = HeadLiteEnsemble([Shaped(i, lambda m: (m,)) for i in range(1, 6)]).eval()
+    xs = inputs(4)
+    assert torch.equal(singles(*xs), pairs(*xs))
+
+
+def test_a_one_element_tuple_is_still_checked_against_the_batch():
+    """Accepting the shorter form does not skip the checks on the mean itself."""
+    e = HeadLiteEnsemble([Shaped(i, lambda m: (m[:1],)) for i in range(1, 6)]).eval()
+    with pytest.raises(ValueError, match="row"):
+        e(*inputs(3))
+
+
+@pytest.mark.parametrize("empty", [tuple, list], ids=["tuple", "list"])
+def test_empty_return_value_is_refused(empty):
+    """There is no first element to read, so this cannot be treated as a mean."""
+    e = HeadLiteEnsemble([Shaped(i, lambda m, e=empty: e()) for i in range(1, 6)]).eval()
+    with pytest.raises(TypeError, match="empty"):
+        e(*inputs(3))

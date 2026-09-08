@@ -8,16 +8,27 @@ def _extract_mean(output, index):
     """Take the mean tensor out of a member's return value.
 
     Members are ordinary ``nn.Module`` objects, so the wrapper cannot assume anything about what
-    they return. A model is expected to return ``(mean, variance)``; a bare tensor, a dictionary
-    or a short sequence is refused by name rather than failing later inside ``torch.stack``.
+    they return. The contract is deliberately narrow: a member must return a non-empty ``tuple``
+    or ``list``, and its **first element** is read as the mean. Anything after the first element
+    is neither read nor checked, so a member that returns ``(mean,)`` is as acceptable here as one
+    that returns ``(mean, variance)``. A ``HeadLite`` network returns ``(mean, variance)``, and
+    only its mean is used; the wrapper produces no aggregate uncertainty.
+
+    A bare tensor, a dictionary, or an empty sequence is refused by name rather than failing later
+    inside ``torch.stack``.
     """
     if isinstance(output, torch.Tensor):
         raise TypeError(
-            f"member {index} returned a bare tensor; a member must return (mean, variance)")
-    if not isinstance(output, (tuple, list)) or len(output) < 1:
+            f"member {index} returned a bare tensor; a member must return a non-empty tuple or "
+            "list whose first element is the mean")
+    if not isinstance(output, (tuple, list)):
         raise TypeError(
-            f"member {index} returned {type(output).__name__}; a member must return "
-            "(mean, variance)")
+            f"member {index} returned {type(output).__name__}; a member must return a non-empty "
+            "tuple or list whose first element is the mean")
+    if len(output) < 1:
+        raise TypeError(
+            f"member {index} returned an empty {type(output).__name__}; the first element is read "
+            "as the mean, so at least one element is required")
     mean = output[0]
     if not isinstance(mean, torch.Tensor):
         raise TypeError(
@@ -58,10 +69,12 @@ class HeadLiteEnsemble(nn.Module):
     This wrapper returns only the mean prediction, not an aggregate variance.
     It does not certify how the members were trained or selected.
 
-    Members may be any ``nn.Module`` that returns ``(mean, variance)``. Each mean must be a
-    floating tensor of shape ``(B, 1)`` where ``B`` is the batch of the inputs passed in, must be
-    finite, and must sit on one device shared by all five. The result is the arithmetic mean of
-    the five member means, in the order given.
+    Members may be any ``nn.Module`` whose return value is a non-empty ``tuple`` or ``list``. Only
+    the first element is read, and it is read as the mean; later elements are ignored and are not
+    validated, so both ``(mean,)`` and the ``(mean, variance)`` that ``HeadLite`` returns are
+    accepted. Each mean must be a floating tensor of shape ``(B, 1)`` where ``B`` is the batch of
+    the inputs passed in, must be finite, and must sit on one device shared by all five. The
+    result is the arithmetic mean of the five member means, in the order given.
     """
     def __init__(self, models: Sequence[nn.Module]):
         super().__init__()
