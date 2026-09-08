@@ -11,7 +11,9 @@ import sys
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-STDLIB = set(sys.stdlib_module_names)
+# tomllib joined the standard library in 3.11, so an interpreter older than that does not
+# list it even though it is not a third-party package on any version.
+STDLIB = set(sys.stdlib_module_names) | {"tomllib"}
 
 
 def _entries(name):
