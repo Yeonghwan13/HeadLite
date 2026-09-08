@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: Please cite the accompanying article.
-title: HeadLite model implementation
+title: HeadLite
 type: software
 version: 0.1.0
-repository-code: https://github.com/Yeonghwan13/HeadLite-review
+repository-code: https://github.com/Yeonghwan13/HeadLite
 authors:
 - given-names: Yeonghwan
   family-names: Kim

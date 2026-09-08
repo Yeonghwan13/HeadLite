@@ -1,167 +1,58 @@
 # HeadLite
 
-PyTorch model definitions for **HeadLite: Compact Multi-Modal Sensor Fusion for Stride Length Estimation from Smart Insoles** (IEEE Sensors Journal, 2026).
+PyTorch implementation of the model architecture in **HeadLite: Compact Multi-Modal Sensor Fusion
+for Stride Length Estimation from Smart Insoles** (IEEE Sensors Journal, 2026).
 
-[Paper](https://doi.org/10.1109/JSEN.2026.3724195)
+[Paper](https://doi.org/10.1109/JSEN.2026.3724195) · [Usage](#usage) · [Citation](#citation)
 
-HeadLite encodes acceleration, angular velocity and plantar pressure in separate convolutional branches. Their pooled features are combined with a metadata embedding and passed to mean and auxiliary variance heads. One network has **1,732,146 parameters**.
+HeadLite encodes acceleration, angular velocity and plantar pressure in three convolutional
+branches, pools each to a fixed-width feature, and combines them with a metadata embedding before
+a mean head and an auxiliary variance head. One network has 1,732,146 parameters. The package also
+provides a five-network mean-prediction ensemble.
 
-## Scope
-
-This release contains the model architecture, a five-network mean-prediction wrapper and generated-input examples. Study data, preprocessing, dataset loaders, evaluation splits, training pipelines and pretrained weights are not included. The examples check the software interface; they do not reproduce the study results.
+Study data, preprocessing, dataset loaders, evaluation splits, training code and trained weights
+are not distributed. The examples run on generated tensors with randomly initialized weights, so
+they exercise the interface and the arithmetic rather than reproducing any result from the article.
 
 ## Installation
 
-### What you need
-
-| | Requirement | Why |
-|---|---|---|
-| Interpreter | Python >= 3.10 | Runs the package |
-| Runtime dependency | `torch>=2.13.0` | The model and every tensor operation |
-| Test dependency | `pytest>=8` | Runs the test suite |
-| Build backend | `setuptools>=68` | Installs the project from `pyproject.toml`; pip fetches it |
-
-Python, pip and Git are tools you install yourself, not pip packages. `torch` is the only
-third-party library the model imports; everything else it uses is in the standard library.
-The `>=` bounds in `pyproject.toml` are the supported range, not a claim that every combination
-inside it was tested.
-
-The PyTorch lower bound comes from published security advisories rather than from anything this
-package needs: GHSA-63cw-57p8-fm3p and GHSA-qfhq-4f3w-5fph affect releases below 2.10.0, and
-GHSA-rrmf-rvhw-rf47 affects releases up to and including 2.12.1. 2.13.0 is the first release
-outside all three. The examples here never read a checkpoint from outside the process, so this is
-about the environment you install, not about anything in this repository.
-
-### Get the repository
+Python 3.10 or newer and a PyTorch build for your platform. The lower bound `torch>=2.13.0` comes
+from published PyTorch security advisories, not from an API this package needs.
 
 ```bash
-git clone https://github.com/Yeonghwan13/HeadLite-review.git
-cd HeadLite-review
+git clone https://github.com/Yeonghwan13/HeadLite.git
+cd HeadLite
 python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-```
 
-This assumes Python 3.11 is already installed and on your `PATH`. Any supported interpreter works;
-3.11 is used here because it matches the verified environment below.
-
-On Windows, use PowerShell:
-
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-```
-
-If your execution policy blocks the activation script, run `.\.venv\Scripts\python.exe` directly
-instead of activating.
-
-Without Git, download the source archive, unpack it, and start from the top-level folder.
-
-### Install: Linux or Windows, CPU
-
-The PyTorch command below follows the official CPU installation form, with the version this
-release was tested with. It was run on Linux for this release; the Windows form of the same
-command was not run here.
-
-```bash
 python -m pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -c constraints-tested-cpu.txt -r requirements.txt
-python -m pip install -c constraints-tested-cpu.txt -e .
-python -m pip check
-```
-
-The `--index-url` applies to that one command, which selects the CPU PyTorch build. Do not make it
-the default index for everything else. `pip install -e .` also resolves the declared dependencies,
-so the two install lines are shown for clarity rather than because both are mechanically required;
-what matters is that installing the requirements alone does not install HeadLite.
-
-`constraints-tested-cpu.txt` pins the PyTorch version this release was tested with. It constrains
-versions, it does not select a CPU or CUDA build, and it is not a full environment lock. Leave it
-out if you already have a supported newer PyTorch that you do not want downgraded.
-
-### Install: macOS
-
-PyTorch publishes macOS wheels on PyPI, so the CPU index URL above is not used. From 2.13.0
-onwards the arm64 wheels are built for macOS 14 and newer; on an older macOS, or on an Intel Mac,
-no wheel in the supported range exists and this package cannot be installed there:
-
-```bash
-python -m pip install torch==2.14.0
-python -m pip install -c constraints-tested-cpu.txt -r requirements.txt
-python -m pip install -c constraints-tested-cpu.txt -e .
-python -m pip check
-```
-
-### Another platform, or PyTorch already installed
-
-Install a PyTorch build that your operating system, architecture and Python version support, then:
-
-```bash
 python -m pip install -r requirements.txt
 python -m pip install -e .
+python -m pip check
 ```
 
-Pick the build from the official PyTorch instructions for your platform. CUDA, ROCm and Apple MPS
-builds are outside what was tested here; the model runs on CPU and does not require a GPU. If no
-wheel exists for your architecture and Python version, install a combination that has one rather
-than changing the package.
+The `--index-url` applies only to the PyTorch line, which is what selects the CPU build. Installing
+the requirements brings in the dependency; installing the project is what makes `headlite`
+importable.
 
-### Check the installation
+Platform specifics, the reasoning behind the version bound, and the environments that were actually
+tested are in [Installation details](docs/INSTALLATION.md).
+
+## Usage
 
 ```bash
-python -c "import headlite, torch; print(headlite.__version__, torch.__version__, headlite.__file__)"
-python examples/forward.py
-python examples/forward.py --ensemble
-python examples/verify_model.py
+python examples/forward.py              # single network
+python examples/forward.py --ensemble   # five-network mean
+python examples/verify_model.py         # numerical self-checks
 ```
 
-`examples/forward.py` prints `parameters: 1732146` and a mean of shape `(2, 1)`; with `--ensemble`
-it prints `parameters: 8660730` and a mean of shape `(2, 1)`. The printed values come from random
-weights and are not stride-length predictions.
-
-`examples/` and `tests/` are not installed by the wheel, so those commands are run from a checkout.
-The source archive contains them, together with the requirements files the tests read.
-
-### Verified environments
-
-| Platform | Python | PyTorch | Ran |
-|---|---|---|---|
-| Ubuntu (GitHub Actions, `ubuntu-latest`) | 3.10, 3.11 | 2.14.0 CPU | Install, `pip check`, tests, all three examples |
-| Ubuntu (GitHub Actions, `ubuntu-latest`) | 3.11 | 2.14.0 CPU | Wheel and sdist build, install into a clean environment, import from outside the checkout, the sdist's own tests |
-| macOS 26 (arm64) | 3.11 | 2.14.0 | Install, `pip check`, tests, all three examples, wheel and sdist install |
-
-The unit-test rows and the packaging row are separate runs, not one combined matrix.
-
-Not exercised: Windows, any GPU path (CUDA, ROCm, Apple MPS), and trained weights. The Windows
-commands above are the documented form, not a run recorded here. Other operating systems and
-Python versions are supported by declaration.
-
-The model also runs under PyTorch 2.13.0, which is the declared lower bound.
-
-## Quick start
-
-```bash
-python examples/forward.py
-python examples/forward.py --ensemble
-```
-
-```bash
-python examples/verify_model.py --seed 77
-```
-
-The examples use generated tensors and random weights. Nothing is downloaded and no study data or
-trained checkpoint is read.
-
-`verify_model.py` checks that the computation is self-consistent: the same inputs through the same
-model twice, the same weights loaded into a fresh model, a state dictionary written to a temporary
-directory and read back, and the wrapper's output against the average computed directly from the
-five members. It prints the largest difference each check observed and exits non-zero if any check
-fails. It writes a temporary state dictionary while it runs and removes it afterwards; running the
-tests also creates pytest's own temporary files.
-
-This verifies that the model computes consistently. It is not a reproduction of any measurement in
-the article: with random weights the numbers carry no information about stride length.
+`forward.py` prints `parameters: 1732146` and a mean of shape `(2, 1)`; with `--ensemble` it prints
+`parameters: 8660730` and the same output shape. `verify_model.py` checks that the computation is
+self-consistent: the same inputs twice, the same weights loaded into a fresh model, a state
+dictionary written to a temporary directory and read back, and the wrapper's output against the
+average computed directly from its five members. It reports the largest difference each check saw
+and exits non-zero on failure.
 
 ```python
 import torch
@@ -176,10 +67,12 @@ meta = torch.randn(2, 6)
 with torch.inference_mode():
     mean, variance = model(acc, gyr, prs, meta)
 
-print(mean.shape, variance.shape)  # torch.Size([2, 1]), torch.Size([2, 1])
+print(mean.shape, variance.shape)   # torch.Size([2, 1]) torch.Size([2, 1])
 ```
 
-These are interface examples, not meaningful stride-length predictions without trained weights.
+Nothing is downloaded and no study data or trained checkpoint is read. `examples/` and `tests/` are
+not installed by the wheel, so run them from a checkout; the source archive contains them along
+with the files the tests read.
 
 ## Inputs and outputs
 
@@ -190,11 +83,20 @@ These are interface examples, not meaningful stride-length predictions without t
 | `prs` | `(B, 40, 300)` | Prepared pressure channels |
 | `meta` | `(B, 6)` | Prepared metadata features |
 
-Inputs must share a floating dtype, device and batch size. The temporal dimension is a **length-normalized stride grid**, not a fixed physical duration. Metadata order is sex, shoe size, height, weight, age and BMI; the model does not encode or scale these fields. Any real use must supply the value scaling and metadata conventions appropriate to the trained weights.
+The four inputs must be finite floating tensors sharing a dtype, device and batch size. The
+temporal axis is a length-normalized stride grid, not a fixed duration or sampling rate. Value
+scaling, sensor calibration and metadata encoding happen before this code: use the feature order
+and scaling that belong to the weights you load.
 
-A single network returns `(mean, variance)`, each shaped `(B, 1)`. The variance output is not a guarantee of calibration. `HeadLiteEnsemble` averages five model means in PyTorch and returns `(B, 1)`; it does not produce aggregate uncertainty or verify an evaluation protocol.
+A single network returns `(mean, variance)`, each `(B, 1)`; the variance head is auxiliary and is
+not a calibration guarantee. `HeadLiteEnsemble` averages the means of five networks and returns
+`(B, 1)`. It produces no aggregate uncertainty and does not validate an evaluation protocol.
 
-The exact head layout is documented in [Implementation notes](docs/IMPLEMENTATION_NOTES.md).
+Use `eval()` with `torch.inference_mode()` for inference. Training mode needs a batch of at least
+two samples because of BatchNorm.
+
+The head layout, the exact dropout probability and the one place the implementation differs from
+Figure 3 are in [Implementation notes](docs/IMPLEMENTATION_NOTES.md).
 
 ## Tests
 
@@ -203,17 +105,12 @@ In an environment that already has a supported PyTorch:
 ```bash
 python -m pip install -r requirements-dev.txt
 python -m pip install -e .
-python -m pip check
 python -m pytest
 ```
 
-`requirements-dev.txt` includes `requirements.txt`, so this adds `pytest` to an environment that
-already has the runtime dependency. It deliberately does not apply `constraints-tested-cpu.txt`:
-that file pins the exact version this release was tested with, and applying it here would
-downgrade a newer supported PyTorch you had installed on purpose.
-
-To reproduce the exact tested environment instead, use a fresh virtual environment and opt into
-the pin:
+This deliberately does not apply `constraints-tested-cpu.txt`, which pins the exact version this
+release was tested with and would downgrade a newer PyTorch you installed on purpose. To reproduce
+that exact environment, opt into the pin in a fresh virtual environment:
 
 ```bash
 python -m pip install -c constraints-tested-cpu.txt -r requirements-dev.txt
@@ -221,12 +118,14 @@ python -m pip install -c constraints-tested-cpu.txt -e .
 python -m pytest
 ```
 
-Running the tests creates pytest's own temporary files.
-
 ## Citation
 
-Use the article metadata in [CITATION.cff](CITATION.cff).
+Cite the article. The machine-readable metadata is in [CITATION.cff](CITATION.cff).
+
+> Y. Kim, C. Choi, K. Yoo, S. Kim and S.-I. Choi, "HeadLite: Compact Multi-Modal Sensor Fusion for
+> Stride Length Estimation from Smart Insoles," *IEEE Sensors Journal*, 2026,
+> doi: 10.1109/JSEN.2026.3724195.
 
 ## License
 
-No software license is included with this source release. No additional reuse terms are granted here.
+No software license is included with this source release, so no reuse terms are granted here.

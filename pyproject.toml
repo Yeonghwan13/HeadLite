@@ -10,6 +10,11 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["torch>=2.13.0"]
 
+[project.urls]
+Paper = "https://doi.org/10.1109/JSEN.2026.3724195"
+Source = "https://github.com/Yeonghwan13/HeadLite"
+Issues = "https://github.com/Yeonghwan13/HeadLite/issues"
+
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 
