@@ -1,1 +1,3 @@
--e .
+# Direct runtime dependency. Keep in sync with pyproject.toml.
+# Install a platform-appropriate PyTorch build first when necessary.
+torch>=2.9

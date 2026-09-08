@@ -3,6 +3,7 @@ message: Please cite the accompanying article.
 title: HeadLite model implementation
 type: software
 version: 0.1.0
+repository-code: https://github.com/Yeonghwan13/HeadLite-review
 authors:
 - given-names: Yeonghwan
   family-names: Kim

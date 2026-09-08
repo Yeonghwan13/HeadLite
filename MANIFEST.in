@@ -1,0 +1,8 @@
+# The sdist ships the tests, so it must also ship the files they read, and the examples and notes
+# the README points at. Without these the unpacked sdist is not a complete source release.
+include requirements.txt
+include requirements-dev.txt
+include constraints-tested-cpu.txt
+include CITATION.cff
+recursive-include examples *.py
+recursive-include docs *.md

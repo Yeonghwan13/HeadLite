@@ -12,18 +12,111 @@ This release contains the model architecture, a five-network mean-prediction wra
 
 ## Installation
 
-Python 3.10 or newer. Install a PyTorch build suitable for your platform, then run from the checkout:
+### What you need
+
+| | Requirement | Why |
+|---|---|---|
+| Interpreter | Python >= 3.10 | Runs the package |
+| Runtime dependency | `torch>=2.9` | The model and every tensor operation |
+| Test dependency | `pytest>=8` | Runs the test suite |
+| Build backend | `setuptools>=68` | Installs the project from `pyproject.toml`; pip fetches it |
+
+Python, pip and Git are tools you install yourself, not pip packages. `torch` is the only
+third-party library the model imports; everything else it uses is in the standard library.
+The `>=` bounds in `pyproject.toml` are the supported range, not a claim that every combination
+inside it was tested.
+
+### Get the repository
 
 ```bash
+git clone https://github.com/Yeonghwan13/HeadLite-review.git
+cd HeadLite-review
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+This assumes Python 3.11 is already installed and on your `PATH`. Any supported interpreter works;
+3.11 is used here because it matches the verified environment below.
+
+On Windows, use PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+```
+
+If your execution policy blocks the activation script, run `.\.venv\Scripts\python.exe` directly
+instead of activating.
+
+Without Git, download the source archive, unpack it, and start from the top-level folder.
+
+### Install: Linux or Windows, CPU
+
+The PyTorch command below is the CPU one from the official installation instructions for 2.9.1.
+It was run on Linux for this release; the Windows form of the same command was not run here.
+
+```bash
+python -m pip install torch==2.9.1 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -c constraints-tested-cpu.txt -r requirements.txt
+python -m pip install -c constraints-tested-cpu.txt -e .
+python -m pip check
+```
+
+The `--index-url` applies to that one command, which selects the CPU PyTorch build. Do not make it
+the default index for everything else. The second command installs the declared dependencies and
+the third installs HeadLite itself; both are needed.
+
+### Install: macOS
+
+PyTorch publishes macOS wheels on PyPI, so the CPU index URL above is not used:
+
+```bash
+python -m pip install torch==2.9.1
+python -m pip install -c constraints-tested-cpu.txt -r requirements.txt
+python -m pip install -c constraints-tested-cpu.txt -e .
+python -m pip check
+```
+
+### Another platform, or PyTorch already installed
+
+Install a PyTorch build that your operating system, architecture and Python version support, then:
+
+```bash
+python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
-Installing the package provides the `headlite` library. `examples/` and `tests/` are not part of
-the installed package, so those commands are run from a checkout.
+Pick the build from the official PyTorch instructions for your platform. CUDA, ROCm and Apple MPS
+builds are outside what was tested here; the model runs on CPU and does not require a GPU. If no
+wheel exists for your architecture and Python version, install a combination that has one rather
+than changing the package.
 
-Verified on CPU with Python 3.11 and PyTorch 2.9.1, and in continuous integration on Python 3.10
-and 3.11. The `>=` bounds in `pyproject.toml` are the supported range, not a claim that every
-combination inside it was tested. No GPU path and no trained weights were exercised.
+### Check the installation
+
+```bash
+python -c "import headlite, torch; print(headlite.__version__, torch.__version__, headlite.__file__)"
+python examples/forward.py
+python examples/forward.py --ensemble
+```
+
+`examples/forward.py` prints `parameters: 1732146` and a mean of shape `(2, 1)`; with `--ensemble`
+it prints `parameters: 8660730` and a mean of shape `(2, 1)`. The printed values come from random
+weights and are not stride-length predictions.
+
+`examples/` and `tests/` are not installed by the wheel, so those commands are run from a checkout.
+The source archive contains them, together with the requirements files the tests read.
+
+### Verified environments
+
+| Platform | Python | PyTorch | Ran |
+|---|---|---|---|
+| Ubuntu (GitHub Actions, `ubuntu-latest`) | 3.10, 3.11 | 2.9.1 CPU | Install, `pip check`, tests, both examples, wheel and sdist install |
+| macOS 26 (arm64) | 3.11 | 2.9.1 | Install, `pip check`, tests, both examples, wheel and sdist install |
+
+No GPU path and no trained weights were exercised. Other operating systems and Python versions are
+supported by declaration, not by a test run recorded here.
 
 ## Quick start
 
@@ -70,9 +163,12 @@ The exact head layout is documented in [Implementation notes](docs/IMPLEMENTATIO
 ## Tests
 
 ```bash
-python -m pip install -e '.[dev]'
+python -m pip install -c constraints-tested-cpu.txt -r requirements-dev.txt
 python -m pytest -q
 ```
+
+`requirements-dev.txt` includes `requirements.txt`, so this adds `pytest` to an environment that
+already has the runtime dependency. Running the tests creates pytest's own temporary files.
 
 ## Citation
 
@@ -80,4 +176,4 @@ Use the article metadata in [CITATION.cff](CITATION.cff).
 
 ## License
 
-No software license has been selected for this review copy. No additional reuse terms are granted here.
+No software license is included with this source release. No additional reuse terms are granted here.

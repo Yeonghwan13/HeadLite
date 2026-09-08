@@ -1,0 +1,3 @@
+# Reference PyTorch version for the documented CPU test path.
+# This is not a complete environment lock or a GPU/platform compatibility claim.
+torch==2.9.1

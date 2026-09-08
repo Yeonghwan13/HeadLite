@@ -1,1 +1,3 @@
--e .[dev]
+-r requirements.txt
+# Test dependency. Keep in sync with the dev extra in pyproject.toml.
+pytest>=8
